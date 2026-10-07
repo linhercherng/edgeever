@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { defaultLocale, getBrowserLocale, getInitialLocale, normalizeLocale } from "./locales.ts";
+import { defaultLocale, getBrowserLocale, getInitialLocale, normalizeLocale, writeStoredLocale } from "./locales.ts";
 
 const originalNavigator = globalThis.navigator;
 const originalWindow = globalThis.window;
@@ -30,10 +30,32 @@ afterEach(() => {
 describe("web locale resolution", () => {
   test("keeps Chinese and English browser languages on their shipped locales", () => {
     setNavigatorLanguages(["zh-TW", "en-US"]);
-    expect(getBrowserLocale()).toBe("zh-CN");
+    expect(getBrowserLocale()).toBe("zh-TW");
     setNavigatorLanguages(["en-GB"]);
     expect(getBrowserLocale()).toBe("en-US");
     expect(normalizeLocale("zh-Hans")).toBe("zh-CN");
+  });
+
+  test("distinguishes Traditional Chinese tags from Simplified Chinese", () => {
+    for (const tag of ["zh-TW", "zh_TW", "zh-Hant", "zh-Hant-TW", "zh-HK", "zh-MO", " ZH_hant_hk "]) {
+      expect(normalizeLocale(tag)).toBe("zh-TW");
+    }
+    for (const tag of ["zh", "zh-CN", "zh-SG", "zh-Hans", "zh-Hans-HK"]) {
+      expect(normalizeLocale(tag)).toBe("zh-CN");
+    }
+    setNavigatorLanguages(["fr-FR", "zh-Hant-TW", "en-US"]);
+    expect(getBrowserLocale()).toBe("zh-TW");
+  });
+
+  test("retains an explicit Traditional Chinese preference across initialization", () => {
+    const storage = new Map();
+    globalThis.window = { localStorage: {
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, value),
+    } };
+    setNavigatorLanguages(["en-US"]);
+    writeStoredLocale("zh-TW");
+    expect(getInitialLocale()).toBe("zh-TW");
   });
 
   test("keeps Japanese browser languages on the shipped ja locale", () => {

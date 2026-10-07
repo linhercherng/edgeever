@@ -1,14 +1,14 @@
 import {
   defaultLocale as sharedDefaultLocale,
   matchSupportedLocale,
-  resolveSupportedLocaleFromCandidates,
+  parseAcceptLanguage,
+  unmatchedLocale,
   supportedLocales as sharedSupportedLocales,
-  type SupportedLocale as SharedSupportedLocale,
 } from "@edgeever/shared/i18n/locales";
 
-export const supportedLocales = sharedSupportedLocales;
+export const supportedLocales = [...sharedSupportedLocales, "zh-TW"] as const;
 
-export type SupportedLocale = SharedSupportedLocale;
+export type SupportedLocale = (typeof supportedLocales)[number];
 export type AppLocalePreference = "system" | SupportedLocale;
 
 export const defaultLocale: SupportedLocale = sharedDefaultLocale;
@@ -18,13 +18,23 @@ const legacyLocaleStorageKey = "edgeever.locale";
 
 export const localeLabels: Record<SupportedLocale, string> = {
   "zh-CN": "简体中文",
+  "zh-TW": "繁體中文",
   "en-US": "English",
   ja: "日本語",
   pl: "Polski",
 };
 
-export const normalizeLocale = (locale: string | null | undefined): SupportedLocale | null =>
-  matchSupportedLocale(locale);
+export const normalizeLocale = (locale: string | null | undefined): SupportedLocale | null => {
+  const tags = locale?.trim().replaceAll("_", "-").toLowerCase().split("-") ?? [];
+  if (
+    tags[0] === "zh" &&
+    !tags.includes("hans") &&
+    tags.some((tag) => ["hant", "tw", "hk", "mo"].includes(tag))
+  ) {
+    return "zh-TW";
+  }
+  return matchSupportedLocale(locale);
+};
 
 export const readStoredLocale = (): SupportedLocale | null => {
   try {
@@ -77,7 +87,13 @@ export const getBrowserLocale = (): SupportedLocale | null => {
     return null;
   }
 
-  return resolveSupportedLocaleFromCandidates(browserLocales);
+  for (const locale of browserLocales) {
+    for (const tag of parseAcceptLanguage(locale ?? "")) {
+      const matched = normalizeLocale(tag);
+      if (matched) return matched;
+    }
+  }
+  return unmatchedLocale;
 };
 
 export const getInitialLocale = () => readStoredLocale() ?? getBrowserLocale() ?? defaultLocale;

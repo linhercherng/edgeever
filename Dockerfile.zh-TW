@@ -1,0 +1,9 @@
+# Overlay the compiled web interface on the matching official server image.
+FROM ghcr.io/tianma-if/edgeever:v1.105.0@sha256:932d3f0a0a8f27a939b3d913d000a1283ababe388ba5ace4be2191a4e9515d15
+ARG EDGE_EVER_BUILD_ID=local-zh-TW
+ENV EDGE_EVER_BUILD_ID=${EDGE_EVER_BUILD_ID} \
+    EDGE_EVER_WEB_DIR=/app/apps/web-zh-TW
+LABEL org.opencontainers.image.title="EdgeEver with Traditional Chinese (local)" \
+      org.opencontainers.image.revision=${EDGE_EVER_BUILD_ID} \
+      org.opencontainers.image.description="Local v1.105.0 web interface with zh-TW support"
+COPY --chown=bun:bun apps/web/dist/ /app/apps/web-zh-TW/

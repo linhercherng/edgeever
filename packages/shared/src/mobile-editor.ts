@@ -2,7 +2,7 @@ import type { Editor } from "@tiptap/core";
 import { EditorState } from "@tiptap/pm/state";
 import type { ImageWidthPresetId } from "./image-display";
 
-export type MobileEditorLocale = "zh-CN" | "en-US" | "ja" | "pl";
+export type MobileEditorLocale = "zh-CN" | "zh-TW" | "en-US" | "ja" | "pl";
 
 export type MobileEditorToolbarActionId =
   | "undo"
@@ -40,6 +40,29 @@ export const MOBILE_EDITOR_TOOLBAR_ACTIONS = [
 }>;
 
 const MOBILE_EDITOR_COPY = {
+  "zh-TW": {
+    placeholder: "開始記錄...",
+    toolbar: "編輯器工具列",
+    actions: {
+      undo: "復原",
+      redo: "重做",
+      image: "上傳圖片",
+      bold: "粗體",
+      bulletList: "項目符號清單",
+      taskList: "工作清單",
+      increaseListIndent: "增加清單層級（Tab）",
+      decreaseListIndent: "減少清單層級（Shift + Tab）",
+      blockquote: "引用",
+      horizontalRule: "分隔線",
+    },
+    imageScale: "圖片顯示尺寸",
+    imageSizes: {
+      small: "較小",
+      medium: "適中",
+      large: "較大",
+      full: "填滿",
+    },
+  },
   "zh-CN": {
     placeholder: "开始记录...",
     toolbar: "编辑器工具栏",
