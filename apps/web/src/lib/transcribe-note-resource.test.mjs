@@ -141,17 +141,21 @@ describe("client-side note media preparation", () => {
     expect(requests[1].init.body.get("model")).toBe("whisper-1");
   });
 
-  test("a browser transport failure does not claim the token or model is invalid", async () => {
+  test("a direct transport failure does not claim the token or model is invalid", async () => {
     async function* parts() { yield new File(["audio"], "sample.mp3", { type: "audio/mpeg" }); }
-    await expect(transcribePreparedAudioParts(
-      { baseUrl: "https://speech.example/v1", modelId: "whisper-1", apiKey: "test-token" },
-      parts(),
-      async () => { throw new TypeError("Failed to fetch"); },
-    )).rejects.toMatchObject({
-      code: "speech_provider_direct_unreachable",
-      platform: "browser",
-    });
-    expect(new SpeechProviderReachabilityError("browser").message).not.toMatch(/token|model/i);
+    try {
+      await transcribePreparedAudioParts(
+        { baseUrl: "https://speech.example/v1", modelId: "whisper-1", apiKey: "test-token" },
+        parts(),
+        async () => { throw new TypeError("Failed to fetch"); },
+      );
+      throw new Error("Expected a direct provider reachability error.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(SpeechProviderReachabilityError);
+      expect(error.code).toBe("speech_provider_direct_unreachable");
+      expect(["browser", "desktop"]).toContain(error.platform);
+      expect(error.message).not.toMatch(/token|model/i);
+    }
   });
 
   test("sends each prepared segment directly to the configured speech endpoint", async () => {
